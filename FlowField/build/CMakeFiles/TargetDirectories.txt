@@ -1,0 +1,3 @@
+/home/uzi/gen-art/FlowField/build/CMakeFiles/FlowField.dir
+/home/uzi/gen-art/FlowField/build/CMakeFiles/edit_cache.dir
+/home/uzi/gen-art/FlowField/build/CMakeFiles/rebuild_cache.dir
