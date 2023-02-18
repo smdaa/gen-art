@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/home/uzi/gen-art/FlowField/build",
-  "command": "/usr/bin/g++ -DCINDER_GL_CORE -DFT2_BUILD_LIBRARY -DFT_DEBUG_LEVEL_TRACE -D_GLFW_X11 -D_UNIX -isystem /home/uzi/Cinder/include -g -std=c++17 -o CMakeFiles/FlowField.dir/src/main.cpp.o -c /home/uzi/gen-art/FlowField/src/main.cpp",
-  "file": "/home/uzi/gen-art/FlowField/src/main.cpp"
-}
-]
