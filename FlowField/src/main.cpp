@@ -189,7 +189,7 @@ void FlowFieldApp::keyDown(KeyEvent event)
 		if (isFullScreen())
 			setFullScreen(false);
 		else
-			quit();
+			quit() ;
 	}
 }
 
