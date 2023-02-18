@@ -12,7 +12,7 @@ using namespace ci::app;
 const int windowSizeX = 1920;
 const int windowSizeY = 1080;
 const int marginSize = 100;
-const int gridResolution = 100;
+const int gridResolution = 5;
 
 // Arrow grid sizes
 const float arrowLength = 15.0f;
@@ -29,7 +29,7 @@ const int nPoints = 5000;
 int **Points;
 
 // step length update
-const float step_length = 10;
+const float step_length = 5;
 
 // Perlin noise generator
 Perlin mPerlin = Perlin();
@@ -44,22 +44,18 @@ public:
 	void update() override;
 
 	void initGrid();
+	void updateGrid();
+	void drawGrid();
 
 	void initPoints();
-	void simulatePoint(int *x, int *y);
+	void updatePoint(int *x, int *y);
+	void updatePoints();
+	void drawPoints();
 };
-
-void prepareSettings(FlowFieldApp::Settings *settings)
-{
-
-	settings->setMultiTouchEnabled(false);
-	settings->setWindowSize(windowSizeX, windowSizeY);
-}
 
 void FlowFieldApp::initGrid()
 {
 
-	// std::cout << nRows << ", " << nColumns << "\n";
 	Grid = new float *[nRows];
 	for (int i = 0; i < nRows; i++)
 	{
@@ -73,6 +69,35 @@ void FlowFieldApp::initGrid()
 	}
 }
 
+void FlowFieldApp::updateGrid()
+{
+	for (int i = 0; i < nRows; i++)
+	{
+		for (int j = 0; j < nColumns; j++)
+		{
+			Grid[i][j] = mPerlin.noise(((float)i) * 0.1f, ((float)j) * 0.1f, (float)app::getElapsedSeconds() * 0.1f) * PI * 2.0f;
+		}
+	}
+}
+
+void FlowFieldApp::drawGrid()
+{
+	for (int i = 0; i < nRows; i++)
+	{
+		for (int j = 0; j < nColumns; j++)
+		{
+			float angle = Grid[i][j];
+			float y = (i * gridResolution);
+			float x = (j * gridResolution);
+
+			vec3 p1(x, y, 0.0f);
+			vec3 p2(x + arrowLength * cos(angle), y + arrowLength * sin(-angle), 0.0f);
+
+			gl::drawVector(p1, p2, headLength, headRadius);
+		}
+	}
+}
+
 void FlowFieldApp::initPoints()
 {
 	Points = new int *[nPoints];
@@ -82,18 +107,10 @@ void FlowFieldApp::initPoints()
 
 		Points[i][0] = rand() % (windowSizeX + marginSize);
 		Points[i][1] = rand() % (windowSizeY + marginSize);
-
-		// std::cout << Points[i][0] << ", " << Points[i][1] << "\n";
 	}
 }
 
-void FlowFieldApp::setup()
-{
-	initGrid();
-	initPoints();
-}
-
-void FlowFieldApp::simulatePoint(int *x, int *y)
+void FlowFieldApp::updatePoint(int *x, int *y)
 {
 
 	int rowIndex = (int)*y / gridResolution;
@@ -101,8 +118,6 @@ void FlowFieldApp::simulatePoint(int *x, int *y)
 
 	rowIndex = std::min(rowIndex, nRows - 1);
 	columnIndex = std::min(columnIndex, nColumns - 1);
-
-	// std ::cout << rowIndex << ", " << columnIndex << "\n";
 
 	float angle = Grid[rowIndex][columnIndex];
 
@@ -112,33 +127,55 @@ void FlowFieldApp::simulatePoint(int *x, int *y)
 	*x = (int)*x + x_step;
 	*y = (int)*y + y_step;
 
-	if (*x > windowSizeX+marginSize)
+	if (*x > windowSizeX + marginSize)
 	{
 		*x = 0;
 	}
 
-	if (*y > windowSizeY+marginSize)
+	if (*y > windowSizeY + marginSize)
 	{
 		*y = 0;
 	}
 
 	if (*x < 0)
 	{
-		*x = windowSizeX+marginSize;
+		*x = windowSizeX + marginSize;
 	}
 
 	if (*y < 0)
 	{
-		*y = windowSizeY+marginSize;
+		*y = windowSizeY + marginSize;
 	}
 }
 
-void FlowFieldApp::update()
+void FlowFieldApp::updatePoints()
 {
 	for (int i = 0; i < nPoints; i++)
 	{
-		simulatePoint(&Points[i][0], &Points[i][1]);
+		updatePoint(&Points[i][0], &Points[i][1]);
 	}
+}
+
+void FlowFieldApp::drawPoints()
+{
+
+	gl::color(Color(1, 1, 0));
+	gl::begin(GL_POINTS);
+	for (int i = 0; i < nPoints; i++)
+	{
+
+		vec2 p(Points[i][0] - (int)marginSize / 2, Points[i][1] - (int)marginSize / 2);
+		// gl::drawSolidCircle(p, 2);
+		gl::vertex(p);
+	}
+	gl::end();
+}
+
+void prepareSettings(FlowFieldApp::Settings *settings)
+{
+
+	settings->setMultiTouchEnabled(false);
+	settings->setWindowSize(windowSizeX, windowSizeY);
 }
 
 void FlowFieldApp::keyDown(KeyEvent event)
@@ -156,40 +193,24 @@ void FlowFieldApp::keyDown(KeyEvent event)
 	}
 }
 
+void FlowFieldApp::setup()
+{
+	initGrid();
+	initPoints();
+}
+
+void FlowFieldApp::update()
+{
+	updatePoints();
+	updateGrid();
+}
+
 void FlowFieldApp::draw()
 {
-	gl::clear(Color::gray(0.1f));
-	gl::color(1.0f, 1.0f, 1.0f);
+	//gl::clear();
 
-	/*
-	for (int i = 0; i < nRows; i++)
-	{
-		for (int j = 0; j < nColumns; j++)
-		{
-			float angle = Grid[i][j];
-
-			float y = (i * gridResolution);
-			float x = (j * gridResolution);
-
-			// std :: cout << x << ", " << y << "\n";
-
-			vec3 p1(x, y, 0.0f);
-			vec3 p2(x + arrowLength * cos(angle), y + arrowLength * sin(-angle), 0.0f);
-
-			gl::drawVector(p1, p2, headLength, headRadius);
-		}
-	}
-
-	*/
-
-	for (int i = 0; i < nPoints; i++)
-	{
-
-		vec2 p(Points[i][0]- (int)marginSize/2, Points[i][1]- (int)marginSize/2);
-		gl::drawSolidCircle(p, 2);
-	}
-
-	gl::end();
+	// drawGrid();
+	drawPoints();
 }
 
 CINDER_APP(FlowFieldApp, RendererGl, prepareSettings)
