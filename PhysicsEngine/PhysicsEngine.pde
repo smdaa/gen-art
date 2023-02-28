@@ -3,9 +3,9 @@ int WindowSizeY = 1080;
 color BgColor = color(0, 0, 0);
 
 PhysicsWorld PhysicsWorld;
-float dt = 0.01;
+float dt = 0.02;
 
-int Nobjects = 500;
+int Nobjects = 10000;
 
 class Object {
   PVector Position;
@@ -22,28 +22,23 @@ class Object {
     Color = _color;
   }
 
-  boolean CheckEdgeDetection() {
+  void CheckEdgeDetection() {
     if (Position.x - Radius < 0) {
       Position.x = Radius;
       Velocity.x = -1 *Velocity.x;
-      return true;
     } else if (Position.x + Radius > WindowSizeX) {
       Position.x = WindowSizeX - Radius;
       Velocity.x = -1 *Velocity.x;
-      return true;
     } else if (Position.y - Radius < 0) {
       Position.y = Radius;
       Velocity.y = -1 *Velocity.y;
-      return true;
     } else if (Position.y + Radius > WindowSizeY) {
       Position.y = WindowSizeY - Radius;
       Velocity.y = -1 *Velocity.y;
-      return true;
     }
-    return false;
   }
 
-  boolean CheckObjectDetection(Object other) {
+  void CheckObjectDetection(Object other) {
     PVector DistanceVec = PVector.sub(Position, other.Position);
     PVector VelocityVec = PVector.sub(Velocity, other.Velocity);
     float DistanceSq = DistanceVec.magSq();
@@ -60,10 +55,7 @@ class Object {
       otherfactor = (((2*Mass)/(other.Mass+Mass))*otherfactor) / DistanceSq;
       PVector othertemp = PVector.mult(DistanceVec, -otherfactor);
       other.Velocity.sub(othertemp);
-      
-      return true;
     }
-    return false;
   }
 
   void Draw() {
@@ -88,22 +80,18 @@ class PhysicsWorld {
 
   void Step(float dt) {
     for (Object object : Objects) {
-      
+
       PVector Force = PVector.mult(Gravity, object.Mass);
       Force.sub(PVector.mult(object.Velocity, 6*PI*object.Radius));
       object.Velocity.add(PVector.mult(Force, (dt/object.Mass)));
-      object.Position.add(PVector.mult(object.Velocity, dt));
 
       for (int i = 1+Objects.indexOf(object); i <Objects.size(); i++) {
-        if (object.CheckObjectDetection( Objects.get(i))){
-          object.Position.add(PVector.mult(object.Velocity, dt));
-          Objects.get(i).Position.add(PVector.mult(Objects.get(i).Velocity, dt));
-        }
-      }
-      
-      if (object.CheckEdgeDetection()){
+        object.CheckObjectDetection( Objects.get(i));
         object.Position.add(PVector.mult(object.Velocity, dt));
+        Objects.get(i).Position.add(PVector.mult(Objects.get(i).Velocity, dt));
       }
+
+      object.CheckEdgeDetection();
     }
   }
 
@@ -135,7 +123,7 @@ void setup() {
 
 
   for (int i =0; i < Nobjects; i++) {
-    float Radius = 5;
+    float Radius = 1;
     PVector Position = new PVector(random(WindowSizeX*0.375, WindowSizeX*0.625), random(WindowSizeY*0.4, WindowSizeY*0.6));
     PVector Velocity = new PVector(0, 0);
     float Mass = 10;
