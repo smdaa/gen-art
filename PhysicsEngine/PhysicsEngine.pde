@@ -1,11 +1,11 @@
 int WindowSizeX = 1920;
 int WindowSizeY = 1080;
-color BgColor = color(0, 0, 0);
+color BgColor = color(255, 255, 255);
 
 PhysicsWorld PhysicsWorld;
-float dt = 0.001;
+float dt = 0.01;
 
-int Nobjects = 5000;
+int Nobjects = 100;
 
 class Object {
   PVector Position;
@@ -107,7 +107,7 @@ class PhysicsWorld {
   }
 
 void DrawObjectsConnections() {
-    stroke(255, 0, 0);
+    stroke(0, 0, 0, 100);
     for (int i = 0; i < Objects.size(); ++i) {
       for (int j = i + 1; j < Objects.size(); ++j) {
         PVector Position1 = Objects.get(j).Position;
@@ -130,21 +130,20 @@ void setup() {
 
 
   for (int i = 0; i < Nobjects; i++) {
-    float Radius = 3;
+    float Radius = random(1, 5);
 
-    float r = 50 * sqrt(random(1));
+    float r = 200 * sqrt(random(1));
     float theta = random(1) * 2 * PI;
     float x = WindowSizeX / 2 + r * cos(theta);
     float y = WindowSizeY / 2 + r * sin(theta);
     PVector Position = new PVector(x, y);
 
-    float vx = .5 * cos(theta);
-    float vy = .5 * sin(theta);
+    float vx = random(-3, 3) * cos(theta);
+    float vy = random(-3, 3) * sin(theta);
     PVector Velocity = new PVector(vx, vy);
 
-    float Mass = 5;
-
-    color Color = color(255, 255, 255);
+    float Mass = random(10, 100);;
+    color Color = color(0, 0, 0);
 
     Object Object = new Object(Position, Velocity, Mass, Radius, Color);
     PhysicsWorld.AddObject(Object);
@@ -157,6 +156,5 @@ void draw() {
   PhysicsWorld.Draw();
   //PhysicsWorld.DrawObjectsConnections();
 
-  saveFrame("./images / ######.png");
-
+  //saveFrame("./images/######.png");
 }
