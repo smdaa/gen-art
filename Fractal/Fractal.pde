@@ -2,67 +2,115 @@ int WindowSizeX = 1920;
 int WindowSizeY = 1080;
 color BgColor = color(255, 255, 255);
 
-float initialradius = 1000;
-float radius = initialradius;
-float radius_step = 2;
-int n_points = 5;
-int rep = 50;
-PVector[] poly;
+float _strutFactor = 0.05;
 
-color[] _colors;
+class Root{
+  PVector[] Polygon;
+  color Color;
+  Branch _Branch;
 
-color[] init_colors(int rep){
-  color[] _colors = new color[rep];
+  Root(int n_points, float radius, color _color){
+    Color = _color;
+    Polygon = new PVector[n_points];
 
-  color _color1 = color(#F6E1C3);
-  color _color2 = color(#E9A178);
-  color _color3 = color(#A84448);
-  color _color4 = color(#7A3E65);
-  color[] colors_set = {_color1, _color2, _color3, _color4};
+    float angle = TWO_PI / n_points;
 
-  for (int i = 0; i < rep; i += 1) {
-    _colors[i] = colors_set[i%colors_set.length];
+    for (int i = 0; i < n_points; i += 1) {
+      float a = angle * i;
+      float sx = cos(a) * radius;
+      float sy = sin(a) * radius;
+      Polygon[i] = new PVector(sx, sy);
+    }
+
+    _Branch = new Branch(0, 0, Polygon, Color);
   }
 
-  return _colors;
+  void display(){
+    pushMatrix();
+    translate(WindowSizeX/2, WindowSizeY/2);
+    beginShape();
+    for (int i = 0; i < Polygon.length; i += 1) {
+      stroke(Color);
+      strokeWeight(2);
+      vertex(Polygon[i].x, Polygon[i].y);
+    }
+    endShape(CLOSE);
+    popMatrix();
+  }
 
 }
 
-PVector[] init_polygon(float radius, int n_points) {
-  float angle = TWO_PI / n_points;
-  PVector[] poly = new PVector[n_points];
+class Branch{
+  int level;
+  int n;
+  PVector[] Polygon;
+  color Color;
 
-  for (int i = 0; i < n_points; i += 1) {
-    float a = angle * i;
-    float sx = cos(a) * radius;
-    float sy = sin(a) * radius;
-    poly[i] = new PVector(sx, sy);
+  Branch(int _level, int _n, PVector[] _Polygon, color _color){
+    level = _level;
+    n = _n;
+    Polygon = strut_points(mid_points(_Polygon));
+    Color = _color;
   }
 
-  return poly;
-}
-
-PVector[] init_subpolygon(PVector[] poly){
-  PVector[] subpolygon = new PVector[poly.length];
-
-  for (int i = 0; i < subpolygon.length-1; ++i) {
-    subpolygon[i] = PVector.add(poly[i], poly[i+1]);
-    subpolygon[i] = PVector.mult(subpolygon[i], 0.5);
+  void display(){
+    pushMatrix();
+    translate(WindowSizeX/2, WindowSizeY/2);
+    beginShape();
+    for (int i = 0; i < Polygon.length; i += 1) {
+      stroke(Color);
+      strokeWeight(2);
+      vertex(Polygon[i].x, Polygon[i].y);
+    }
+    endShape(CLOSE);
+    popMatrix();
   }
-  
-  subpolygon[subpolygon.length-1] = PVector.add(poly[0], poly[poly.length-1]);
-  subpolygon[subpolygon.length-1] = PVector.mult(subpolygon[subpolygon.length-1], 0.5);
 
-  return subpolygon;
-}
+  PVector[] mid_points(PVector[] _Polygon){
+    PVector[] MidPoints = new PVector[_Polygon.length];
 
-void draw_polygon(PVector[] poly, color _color){
-  beginShape();
-  for (int i = 0; i < poly.length; i += 1) {
-    fill(_color);
-    vertex(poly[i].x, poly[i].y);
+    int next_i;
+    for (int i = 0; i < _Polygon.length; ++i) {
+      if (i == _Polygon.length - 1){
+        next_i = 0;
+      } else {
+        next_i = i + 1;
+      }
+      MidPoints[i] = PVector.mult(PVector.add(_Polygon[i], _Polygon[next_i]), 0.5); 
+    }
+
+    return MidPoints;
   }
-  endShape(CLOSE);
+
+  PVector[] strut_points(PVector[] _Polygon){
+    PVector[] StrutPoints = new PVector[_Polygon.length];
+
+    int next_i;
+    for (int i = 0; i < _Polygon.length; ++i) {
+      next_i = i + 3;
+      if (next_i >= _Polygon.length) { 
+        next_i -= _Polygon.length; 
+      }
+      StrutPoints[i] = strut_2points(_Polygon[i], _Polygon[next_i]);
+    }
+
+    return StrutPoints;
+  }
+
+  PVector strut_2points(PVector _Point1, PVector _Point2){
+    float px, py;
+    float adj, opp;
+
+    opp = abs(_Point2.x - _Point1.x);
+    adj = abs(_Point2.y - _Point1.y);
+
+    px = _Point1.x - Math.signum((int) (_Point1.x - _Point2.x)) * (opp * _strutFactor);
+    py = _Point1.y - Math.signum((int) (_Point1.y - _Point2.y)) *(adj * _strutFactor);
+
+    return new PVector(px, py);
+
+  }
+
 }
 
 void settings() {
@@ -71,27 +119,13 @@ void settings() {
 
 void setup() {
   frameRate(60);
-  strokeWeight(2);
-  _colors = init_colors(rep);
+  noFill();
 }
 
 void draw() {
-  background(_colors[_colors.length -1]);
-
-  poly = init_polygon(radius, n_points);
-  for (int i = 0; i < rep; i+=1){
-    pushMatrix();
-    translate(WindowSizeX/2, WindowSizeY/2);
-    draw_polygon(poly, _colors[i]);
-    popMatrix();
-
-    poly = init_subpolygon(poly);
-  }
-
-  radius += radius_step;
-
-  if (radius > max(WindowSizeX, WindowSizeY)) {
-    //radius = initialradius;
-  }
+  background(BgColor);
+  Root Root0 = new Root(5, 400, color(0, 0, 0));
+  Root0.display();
+  Root0._Branch.display();
   
 }
